@@ -1,7 +1,6 @@
 #!/bin/bash
 
 ACME="$HOME/.acme.sh/acme.sh"
-CONF="$HOME/.acme.sh/account.conf"
 
 install_base() {
 
@@ -24,8 +23,6 @@ echo "安装 acme.sh ..."
 curl https://get.acme.sh | sh
 source ~/.bashrc
 
-echo "acme.sh 安装完成"
-
 else
 
 echo "acme.sh 已安装"
@@ -37,43 +34,40 @@ fi
 set_ca() {
 
 $ACME --set-default-ca --server letsencrypt
-echo "默认CA已设置为 Let's Encrypt"
-
-}
-
-set_cf_token() {
-
-read -p "请输入 Cloudflare API Token: " CF_Token
-
-if [ -z "$CF_Token" ]; then
-echo "Token 不能为空"
-return
-fi
-
-echo "export CF_Token=\"$CF_Token\"" >> ~/.bashrc
-echo "CF_Token=\"$CF_Token\"" >> $CONF
-
-export CF_Token="$CF_Token"
-
-echo "Token 已保存"
 
 }
 
 issue_cert() {
 
-if [ ! -f "$ACME" ]; then
-echo "acme.sh 未安装"
-return
-fi
+echo ""
+echo "======================================"
+echo "请手动输入 Cloudflare DNS API Token"
+echo "======================================"
 
-read -p "请输入证书域名 (例如 cdn.example.com): " domain
+echo "示例："
+echo "export CF_Token=\"你的token\""
+echo ""
+
+read -p "请输入命令并回车: "
+
+echo ""
+echo "Token 已导出"
+echo ""
+
+echo "======================================"
+echo "请输入需要申请证书的域名"
+echo "======================================"
+
+read -p "证书域名: " domain
 
 if [ -z "$domain" ]; then
 echo "域名不能为空"
 return
 fi
 
+echo ""
 echo "开始申请证书..."
+echo ""
 
 $ACME --issue -d "$domain" --dns dns_cf --keylength ec-256
 
@@ -95,11 +89,9 @@ fi
 
 $ACME --issue -d "$domain" --dns dns_cf --keylength ec-256 --force
 
-echo "重签完成"
-
 }
 
-list_cert() {
+show_cert() {
 
 $ACME --list
 
@@ -107,17 +99,15 @@ $ACME --list
 
 show_cron() {
 
-echo "当前自动续签任务："
 crontab -l
 
 }
 
-one_key_install() {
+one_key() {
 
 install_base
 install_acme
 set_ca
-set_cf_token
 issue_cert
 
 }
@@ -133,11 +123,10 @@ echo "======================================"
 echo "1. 一键申请证书"
 echo "2. 安装基础环境"
 echo "3. 安装 acme.sh"
-echo "4. 设置 Cloudflare Token"
-echo "5. 申请 ECC 证书"
-echo "6. 强制重新签发证书"
-echo "7. 查看已申请证书"
-echo "8. 查看自动续签任务"
+echo "4. 申请 ECC 证书 (手动输入 Token)"
+echo "5. 强制重新签发证书"
+echo "6. 查看已申请证书"
+echo "7. 查看自动续签任务"
 echo "0. 退出"
 echo "======================================"
 
@@ -148,7 +137,7 @@ read -p "请输入选项 [默认1]: " num
 case $num in
 
 1)
-one_key_install
+one_key
 ;;
 
 2)
@@ -160,22 +149,18 @@ install_acme
 ;;
 
 4)
-set_cf_token
-;;
-
-5)
 issue_cert
 ;;
 
-6)
+5)
 renew_cert
 ;;
 
-7)
-list_cert
+6)
+show_cert
 ;;
 
-8)
+7)
 show_cron
 ;;
 
