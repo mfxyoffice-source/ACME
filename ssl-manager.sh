@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================
-# ACME.sh Cloudflare ECC 证书管理脚本（菜单化 + 自动化）
+# ACME.sh Cloudflare ECC 证书管理脚本（菜单化 + 自动化 + 自动安装 cron）
 # ==========================================
 
 # 检查 root
@@ -18,7 +18,7 @@ show_menu() {
     echo ""
     echo "请选择操作："
     echo "1) 执行完整自动化证书申请（默认）"
-    echo "2) 安装依赖 curl/idn"
+    echo "2) 安装依赖 curl/idn/cron"
     echo "3) 安装 acme.sh"
     echo "4) 输入 Cloudflare CF_Token"
     echo "5) 设置默认 CA 为 Let's Encrypt"
@@ -34,11 +34,25 @@ ACME_CMD="$HOME/.acme.sh/acme.sh"
 CF_Token=""
 DOMAIN=""
 
-# 自动化流程函数（使用你提供的新顺序）
+# 检查并安装 cron
+install_cron_if_needed() {
+    if ! command -v crontab >/dev/null 2>&1; then
+        echo "[步骤] cron 未安装，正在安装..."
+        apt update -y
+        apt install -y cron
+        systemctl enable cron
+        systemctl start cron
+        echo "[步骤] cron 安装完成"
+    fi
+}
+
+# 自动化流程函数
 full_auto() {
-    echo "[1/6] 安装依赖：curl idn..."
+    echo "[1/6] 安装依赖：curl idn cron..."
     apt update -y
-    apt install -y curl idn
+    apt install -y curl idn cron
+    systemctl enable cron
+    systemctl start cron
 
     echo "[2/6] 安装 acme.sh..."
     curl https://get.acme.sh | sh
@@ -90,9 +104,11 @@ while true; do
             full_auto
             ;;
         2)
-            echo "[步骤] 安装依赖..."
+            echo "[步骤] 安装依赖：curl idn cron..."
             apt update -y
-            apt install -y curl idn
+            apt install -y curl idn cron
+            systemctl enable cron
+            systemctl start cron
             ;;
         3)
             echo "[步骤] 安装 acme.sh..."
