@@ -9,7 +9,6 @@ issue_cert() {
     echo ""
     echo "======================================"
     echo "请手动输入 Cloudflare DNS API Token"
-    echo "示例: 8ckd9__GmV_jrUXqbZUivPjr5a_pXUCtRAmk38lK"
     echo "======================================"
     read -r CF_Token
 
@@ -99,20 +98,6 @@ show_cron() {
 }
 
 # ----------------------------------
-# 一键流程（手动交互版）
-# ----------------------------------
-one_key() {
-    install_base
-    install_acme
-    $ACME --set-default-ca --server letsencrypt
-    echo ""
-    echo "基础环境和 acme.sh 安装完成"
-    echo ""
-    # 手动申请证书
-    issue_cert
-}
-
-# ----------------------------------
 # 菜单循环
 # ----------------------------------
 while true
@@ -121,7 +106,6 @@ do
     echo "======================================"
     echo "        ACME 证书管理控制台"
     echo "======================================"
-    echo "1. 一键申请证书"
     echo "2. 安装基础环境"
     echo "3. 安装 acme.sh"
     echo "4. 申请 ECC 证书（手动输入 Token）"
@@ -131,13 +115,9 @@ do
     echo "0. 退出"
     echo "======================================"
 
-    read -p "请输入选项 [默认1]: " num
-    [ -z "$num" ] && num=1
+    read -p "请输入选项: " num
 
     case $num in
-        1)
-            one_key
-            ;;
         2)
             install_base
             ;;
