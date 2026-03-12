@@ -2,63 +2,22 @@
 
 ACME="$HOME/.acme.sh/acme.sh"
 
-install_base() {
-
-echo "安装基础环境..."
-apt update -y
-apt install -y cron curl socat
-
-systemctl enable cron
-systemctl start cron
-
-echo "基础环境安装完成"
-
-}
-
-install_acme() {
-
-if [ ! -f "$ACME" ]; then
-
-echo "安装 acme.sh ..."
-curl https://get.acme.sh | sh
-source ~/.bashrc
-
-else
-
-echo "acme.sh 已安装"
-
-fi
-
-}
-
-set_ca() {
-
-$ACME --set-default-ca --server letsencrypt
-
-}
-
 issue_cert() {
 
 echo ""
-echo "======================================"
-echo "请手动输入 Cloudflare DNS API Token"
-echo "======================================"
+echo "请手动输入 Cloudflare DNS API Token并回车："
+read -r CF_Token
 
-echo "示例："
-echo "export CF_Token=\"你的token\""
+if [ -z "$CF_Token" ]; then
+echo "Token不能为空"
+return
+fi
+
+export CF_Token="$CF_Token"
+
 echo ""
-
-read -p "请输入命令并回车: "
-
-echo ""
-echo "Token 已导出"
-echo ""
-
-echo "======================================"
-echo "请输入需要申请证书的域名"
-echo "======================================"
-
-read -p "证书域名: " domain
+echo "请输入证书域名并回车："
+read -r domain
 
 if [ -z "$domain" ]; then
 echo "域名不能为空"
@@ -78,14 +37,29 @@ echo ""
 
 }
 
+install_base() {
+
+apt update -y
+apt install -y cron curl socat
+
+systemctl enable cron
+systemctl start cron
+
+}
+
+install_acme() {
+
+if [ ! -f "$ACME" ]; then
+curl https://get.acme.sh | sh
+source ~/.bashrc
+fi
+
+}
+
 renew_cert() {
 
-read -p "请输入需要强制重签的域名: " domain
-
-if [ -z "$domain" ]; then
-echo "域名不能为空"
-return
-fi
+echo "请输入需要重签的域名："
+read -r domain
 
 $ACME --issue -d "$domain" --dns dns_cf --keylength ec-256 --force
 
@@ -107,7 +81,7 @@ one_key() {
 
 install_base
 install_acme
-set_ca
+$ACME --set-default-ca --server letsencrypt
 issue_cert
 
 }
@@ -123,7 +97,7 @@ echo "======================================"
 echo "1. 一键申请证书"
 echo "2. 安装基础环境"
 echo "3. 安装 acme.sh"
-echo "4. 申请 ECC 证书 (手动输入 Token)"
+echo "4. 申请 ECC 证书"
 echo "5. 强制重新签发证书"
 echo "6. 查看已申请证书"
 echo "7. 查看自动续签任务"
