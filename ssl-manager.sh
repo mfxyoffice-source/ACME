@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================
-# ACME.sh Cloudflare ECC 证书管理脚本（菜单化）
+# ACME.sh Cloudflare ECC 证书管理脚本（菜单化 + 自动化）
 # ==========================================
 
 # 检查 root
@@ -34,20 +34,21 @@ ACME_CMD="$HOME/.acme.sh/acme.sh"
 CF_Token=""
 DOMAIN=""
 
-# 自动化流程函数
+# 自动化流程函数（使用你提供的新顺序）
 full_auto() {
-    echo "[自动化] 安装依赖..."
+    echo "[1/6] 安装依赖：curl idn..."
     apt update -y
     apt install -y curl idn
 
-    echo "[自动化] 安装 acme.sh..."
+    echo "[2/6] 安装 acme.sh..."
     curl https://get.acme.sh | sh
     ACME_CMD="$HOME/.acme.sh/acme.sh"
 
     read -p "请输入 Cloudflare CF_Token: " CF_Token
     export CF_Token
+    echo "CF_Token 已设置。"
 
-    echo "[自动化] 设置默认 CA 为 Let's Encrypt..."
+    echo "[3/6] 设置默认 CA 为 Let's Encrypt..."
     $ACME_CMD --set-default-ca --server letsencrypt
 
     while true; do
@@ -59,18 +60,23 @@ full_auto() {
         fi
     done
 
-    echo "[自动化] 申请 ECC 证书..."
+    echo "[4/6] 正在申请 ECC 证书..."
     $ACME_CMD --issue -d "$DOMAIN" --dns dns_cf --keylength ec-256 --force
 
     if [ $? -eq 0 ]; then
-        echo "证书申请成功！证书目录：$HOME/.acme.sh/$DOMAIN/"
+        echo "========================================="
+        echo "证书申请成功！"
+        echo "证书文件目录：$HOME/.acme.sh/$DOMAIN/"
+        echo "========================================="
     else
         echo "证书申请失败，请检查 CF_Token 和域名设置。"
+        exit 1
     fi
 
-    echo "[自动化] 安装 cron 定时任务..."
+    echo "[5/6] 安装 cron 定时任务..."
     $ACME_CMD --install-cronjob
-    echo "自动化流程完成！"
+
+    echo "[6/6] 自动化流程完成！"
 }
 
 # 菜单循环
